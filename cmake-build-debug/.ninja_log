@@ -1,0 +1,7 @@
+# ninja log v5
+0	175	7427587233414590	build.ninja	a86e28afe689d656
+3	1520	7427583491489994	CMakeFiles/DeepVision.dir/main.cpp.obj	f888220b5fce93c2
+1520	1756	7427583493779671	DeepVision.exe	e43c83a3cdcbf5ce
+1	215	7427587233414590	build.ninja	a86e28afe689d656
+4	1914	7427587252771987	CMakeFiles/DeepVision.dir/main.cpp.obj	f888220b5fce93c2
+1914	2155	7427587255127132	DeepVision.exe	e43c83a3cdcbf5ce
