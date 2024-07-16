@@ -53,11 +53,15 @@ private:
      * @brief R, T: 旋转矩阵和平移矩阵, 单目相机获取R与t需要获取连续两帧的本质矩阵计算位姿(标定获得的R与t是相对于第一帧的)
      * @brief imageSize: 图像尺寸
      * */
-    Mat params, distortion, Projection;
+    Mat Projection;
     Mat map1, map2, R, T;
-    Size imageSize;
 
 private:
+
+    Mat _GetParams(){
+        return params;
+    }
+
     void _UpdateFrame(){
         cap >> frame;
         if(frame.empty()) throw DeepException("Camera frame is empty!");
@@ -73,6 +77,9 @@ private:
     }
 
 public:
+    Mat params, distortion;
+    Size imageSize;
+
     // 无参构造
     MonocularCamera();
 

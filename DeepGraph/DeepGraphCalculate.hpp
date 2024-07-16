@@ -170,4 +170,88 @@ public:
     }
 };
 
+// 单目相机获取深度图
+class MonoDepthMap : public MonocularCamera {
+private:
+    MonocularCamera camera;
+
+public:
+    MonoDepthMap() = default;
+    MonoDepthMap(MonocularCamera camera) : camera(std::move(camera)) {}
+
+private:
+    Mat E;
+    Mat DepthMap, ColorMap;
+
+public:
+    void CalculateDepthMap(Mat lastFrame) {
+        // 计算本质矩阵E
+        Mat frame;
+        camera.getFrame(frame);
+        Mat frame_gray;
+        cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
+        Mat mask = Mat::zeros(frame.size(), CV_8U);
+        mask(Rect(0, 0, frame.cols, frame.rows)) = 255;
+
+        // 本质矩阵E
+        E = findEssentialMat(frame_gray, lastFrame, camera.params, RANSAC, 0.999, 1.0, mask);
+        Mat R, T;
+        recoverPose(E, frame_gray, lastFrame, camera.params, R, T);
+
+        // 计算图片间的orb特征点并进行三角测量
+        vector<KeyPoint> keyPoints1, keyPoints2;
+        Mat descriptors1, descriptors2;
+        Ptr<ORB> orb = ORB::create();
+        orb->detectAndCompute(lastFrame, mask, keyPoints1, descriptors1);
+        orb->detectAndCompute(frame, mask, keyPoints2, descriptors2);
+        Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
+        vector<DMatch> matches;
+        matcher->match(descriptors1, descriptors2, matches);
+        vector<Point2f> points1, points2;
+        for (int i = 0; i < matches.size(); i++) {
+            points1.push_back(keyPoints1[matches[i].queryIdx].pt);
+            points2.push_back(keyPoints2[matches[i].trainIdx].pt);
+        }
+        Mat points4D;
+        triangulatePoints(camera.params * Mat::eye(3, 4, CV_64F), Mat::eye(3, 4, CV_64F), points1, points2, points4D);
+        Mat points3D;
+        convertPointsFromHomogeneous(points4D.t(), points3D);
+
+        // 计算深度图
+        DepthMap = Mat::zeros(frame.size(), CV_32F);
+        for (int i = 0; i < points3D.rows; i++) {
+            Point3f point = points3D.at<Point3f>(i);
+            DepthMap.at<float>(point.y, point.x) = point.z;
+        }
+
+        // 空洞值掩膜
+        FillHole();
+
+        // 彩色深度图
+        ColorMap = Mat::zeros(frame.size(), CV_8UC3);
+        double min, max;
+        minMaxLoc(DepthMap, &min, &max);
+        for (int i = 0; i < DepthMap.rows; i++) {
+            for (int j = 0; j < DepthMap.cols; j++) {
+                ColorMap.at<Vec3b>(i, j) = Vec3b(255 * (DepthMap.at<float>(i, j) - min) / (max - min), 0, 0);
+            }
+        }
+    }
+
+    void FillHole(){
+        // 空洞值掩膜
+        Mat hole_mask;
+        // 通过阈值处理得到空洞掩膜
+        threshold(DepthMap, hole_mask, 0, 185, THRESH_BINARY);
+        // 覆盖后转为8位图(2 ^ 8 - 1 = 255)也就是正常色彩
+        hole_mask.convertTo(hole_mask, CV_8U);
+        // 闭运算填充空洞
+        Mat kernel = getStructuringElement(MORPH_RECT, Size(8, 8));
+        morphologyEx(hole_mask, hole_mask, MORPH_CLOSE, kernel);
+        // 反转掩膜(空洞为0, 非空洞为255)
+        hole_mask = 255 - hole_mask;
+        // 修复空洞, 使用TELEA算法
+        inpaint(DepthMap, hole_mask, DepthMap, 6, INPAINT_TELEA); }
+};
+
 #endif
