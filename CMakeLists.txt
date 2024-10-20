@@ -3,7 +3,7 @@ project(DeepVision)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(OpenCV_DIR E:/opencv/install/x64/mingw/lib)
+set(OpenCV_DIR E:/opencv/build/install/x64/mingw/lib)
 # 寻找必要文件
 find_package(OpenCV REQUIRED)
 # 导入OpenCV的头
@@ -16,6 +16,9 @@ file(GLOB_RECURSE DataStruct_SRC "DataStruct/*.*")
 
 add_executable(DeepVision main.cpp ${DeepVision_SRC} ${BuildMap_SRC} ${DataStruct_SRC}
         DeepGraph/DeepGraphCalculate.hpp
-        DeepGraph/DeepGraph.h)
+        DeepGraph/DeepGraph.h
+        DataStruct/ThreadPool.cpp
+        DataStruct/ThreadPool.hpp
+)
 
 target_link_libraries(DeepVision ${OpenCV_LIBS})

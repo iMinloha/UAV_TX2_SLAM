@@ -3,6 +3,9 @@
 
 #include "opencv2/opencv.hpp"
 #include "BinocularCamera.hpp"
+// PCL点云库
+// #include <pcl/point_types.h>
+// #include <pcl/visualization/cloud_viewer.h>
 
 // 双目相机获取深度图
 /*** BinDepthMap

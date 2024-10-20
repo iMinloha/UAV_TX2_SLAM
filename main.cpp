@@ -5,7 +5,7 @@ using namespace cv;
 using namespace std;
 
 int main() {
-    BinocularCamera camera("camera.csv", 0, 3840, 1080);
+    BinocularCamera camera("camera.csv", 1, 3840, 1080);
     while (true){
         camera.UpdateCameraPicture();
 
